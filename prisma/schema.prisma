@@ -39,4 +39,5 @@ model AppSettings {
   showCommonImages   Boolean @default(true)
   preserveFeatured   Boolean @default(false)
   applyToAll         Boolean @default(true)
+  reorderCollections String  @default("[]")
 }

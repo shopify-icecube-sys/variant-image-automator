@@ -1,4 +1,4 @@
-import * as fs from "node:fs/promises";
+import { useState } from "react";
 import { useLoaderData, useNavigate, useSubmit } from "react-router";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
@@ -15,6 +15,7 @@ export const action = async ({ request }) => {
     showCommonImages: data.showCommonImages === "true",
     preserveFeatured: data.preserveFeatured === "true",
     applyToAll: data.applyToAll === "true",
+    reorderCollections: data.reorderCollections || "[]",
   };
 
   await updateSettings(session.shop, settings);
@@ -40,6 +41,13 @@ export const action = async ({ request }) => {
               key: "apply_to_all",
               type: "boolean",
               value: settings.applyToAll.toString(),
+              ownerId: shopId
+            },
+            {
+              namespace: "variant_image_automator",
+              key: "reorder_collections",
+              type: "json",
+              value: settings.reorderCollections,
               ownerId: shopId
             }
           ]
@@ -161,12 +169,22 @@ export default function Index() {
   const submit = useSubmit();
   const themeEditorUrl = `https://${shop}/admin/themes/current/editor?context=apps`;
 
+  const [isPickerOpen, setPickerOpen] = useState(false);
+
   const handleSettingChange = (settingName, value) => {
     const newSettings = {
       ...settings,
       [settingName]: value,
     };
     submit(newSettings, { method: "post" });
+  };
+
+  const selectedCollections = JSON.parse(settings.reorderCollections || "[]");
+
+  const handleSelection = (resources) => {
+    const newIds = resources.selection.map((res) => res.id);
+    handleSettingChange("reorderCollections", JSON.stringify(newIds));
+    setPickerOpen(false);
   };
 
   return (
@@ -243,23 +261,43 @@ export default function Index() {
       </s-section>
 
       <s-section>
-        <s-heading>Select app scope</s-heading>
+        <s-heading>Reorder Mode Collections</s-heading>
         <s-paragraph style={{ color: "#6d7175", fontSize: "13px", marginTop: "4px" }}>
-          Choose whether the app works on all products or limited products
+          In these collections, all images of the same color will be shown, but the selected variant's images will be moved to the top.
         </s-paragraph>
-        <div style={{ marginTop: "16px", padding: "16px", backgroundColor: "#f6f6f7", borderRadius: "8px" }}>
-          <div style={{ display: "flex", gap: "12px", alignItems: "flex-start" }}>
-            <input 
-              type="checkbox" 
-              checked={settings.applyToAll}
-              onChange={(e) => handleSettingChange("applyToAll", e.target.checked)}
-              style={{ width: "18px", height: "18px", marginTop: "2px" }}
-            />
-            <div>
-              <p style={{ fontWeight: "600", fontSize: "14px" }}>Apply to all products</p>
-              <p style={{ fontSize: "13px", color: "#6d7175" }}>The app will work on all products in your store</p>
+        
+        <div style={{ marginTop: "16px" }}>
+          <s-button onClick={async () => {
+            const selection = await shopify.resourcePicker({
+              type: "collection",
+              multiple: true,
+              action: "select",
+              selectionIds: selectedCollections.map(id => ({ id }))
+            });
+            
+            if (selection) {
+               const newIds = selection.map((res) => res.id);
+               handleSettingChange("reorderCollections", JSON.stringify(newIds));
+            }
+          }}>
+            {selectedCollections.length > 0 ? "Edit Collections" : "Select Collections"}
+          </s-button>
+          
+          {selectedCollections.length > 0 && (
+            <div style={{ marginTop: "12px", display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {selectedCollections.map(id => (
+                <span key={id} style={{ 
+                  backgroundColor: "#f1f1f1", 
+                  padding: "4px 10px", 
+                  borderRadius: "4px", 
+                  fontSize: "12px",
+                  color: "#333"
+                }}>
+                  {id.split("/").pop()}
+                </span>
+              ))}
             </div>
-          </div>
+          )}
         </div>
       </s-section>
     </s-page>

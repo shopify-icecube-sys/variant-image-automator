@@ -12,6 +12,7 @@ export async function getSettings(shop) {
       showCommonImages: true,
       preserveFeatured: false,
       applyToAll: true,
+      reorderCollections: "[]",
     };
   }
 

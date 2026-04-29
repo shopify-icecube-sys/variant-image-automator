@@ -1,0 +1,32 @@
+[
+  {
+    "id": "gid://shopify/OnlineStoreTheme/154890240158",
+    "role": "MAIN",
+    "name": "Horizon-New"
+  },
+  {
+    "id": "gid://shopify/OnlineStoreTheme/155013185694",
+    "role": "UNPUBLISHED",
+    "name": "Tinker"
+  },
+  {
+    "id": "gid://shopify/OnlineStoreTheme/155015512222",
+    "role": "UNPUBLISHED",
+    "name": "Savor"
+  },
+  {
+    "id": "gid://shopify/OnlineStoreTheme/155015544990",
+    "role": "UNPUBLISHED",
+    "name": "Ritual"
+  },
+  {
+    "id": "gid://shopify/OnlineStoreTheme/155015577758",
+    "role": "UNPUBLISHED",
+    "name": "Atelier"
+  },
+  {
+    "id": "gid://shopify/OnlineStoreTheme/155558510750",
+    "role": "DEVELOPMENT",
+    "name": "App Ext. Host (304568-DESKTOP-R82PE6G)"
+  }
+]

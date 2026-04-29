@@ -1,0 +1,42 @@
+{% assign apply_to_all = shop.metafields.variant_image_automator.apply_to_all.value %}
+
+{% if apply_to_all != false and apply_to_all != 'false' %}
+  {% if product %}
+    <script>
+      window.VariantImageAutomator = {
+        applyToAll: true,
+        product: {
+          id: "{{ product.id }}",
+          media: [
+            {% for media in product.media %}
+              { 
+                "id": "{{ media.id | default: forloop.index }}", 
+                "src": {{ media | image_url | json }} 
+              }{% unless forloop.last %},{% endunless %}
+            {% endfor %}
+          ]
+        },
+        currentVariant: { id: "{{ product.selected_or_first_available_variant.id }}" },
+        allVariants: [
+          {% for variant in product.variants %}
+            {
+              "id": "{{ variant.id }}",
+              "title": {{ variant.title | json }},
+              "featured_image_id": "{{ variant.featured_media.id | default: variant.image.id }}"
+            }{% unless forloop.last %},{% endunless %}
+          {% endfor %}
+        ]
+      };
+    </script>
+    <script src="{{ 'app.js' | asset_url }}" defer></script>
+  {% endif %}
+{% endif %}
+
+{% schema %}
+{
+  "name": "Variant Image Automator",
+  "target": "body",
+  "javascript": "app.js",
+  "settings": []
+}
+{% endschema %}

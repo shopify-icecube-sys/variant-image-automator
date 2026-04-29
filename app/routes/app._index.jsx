@@ -215,26 +215,12 @@ export default function Index() {
                 <s-button onClick={() => navigate("/app/themes")}>
                   Select theme
                 </s-button>
-                <s-button onClick={() => navigate("/app/products")}>
-                  Manage Products
-                </s-button>
               </s-stack>
             </div>
           </s-stack>
         </s-stack>
       </s-section>
 
-      <s-section>
-        <div style={{ padding: "8px 0" }}>
-          <p style={{ fontSize: "14px", color: "#6d7175", marginBottom: "8px" }}>Products</p>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-            <span style={{ fontSize: "28px", fontWeight: "700", color: "#202223" }}>
-              {productCount}
-            </span>
-            <span style={{ fontSize: "14px", color: "#6d7175" }}>total products</span>
-          </div>
-        </div>
-      </s-section>
 
       <s-section>
         <s-heading>How it works</s-heading>

@@ -226,12 +226,18 @@ export default function Index() {
               <s-stack direction="inline" gap="base">
                 <s-button
                   variant="primary"
-                  onClick={() => window.open(themeEditorUrl, "_blank")}
+                  disabled={isPublished}
+                  onClick={() => {
+                    if (!isPublished) {
+                      window.open(themeEditorUrl, "_blank");
+                    }
+                  }}
+                  style={{
+                    opacity: isPublished ? 0.6 : 1,
+                    cursor: isPublished ? "not-allowed" : "pointer"
+                  }}
                 >
                   Enable app embed
-                </s-button>
-                <s-button onClick={() => navigate("/app/themes")}>
-                  Select theme
                 </s-button>
               </s-stack>
             </div>

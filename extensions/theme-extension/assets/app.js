@@ -1,4 +1,4 @@
-console.log("Variant Image Automator: 100% Functional + Speed Fix");
+console.log("Variant Image Automator: Stable & Silent Mode");
 
 (function () {
   const config = window.VariantImageAutomator;
@@ -6,13 +6,13 @@ console.log("Variant Image Automator: 100% Functional + Speed Fix");
     return;
   }
 
-  // 1. Simple CSS for transitions (Non-breaking)
+  // 1. Simple CSS for transitions
   if (!document.getElementById('v-automator-style')) {
     const style = document.createElement('style');
     style.id = 'v-automator-style';
     style.textContent = `
       .v-hidden-item { display: none !important; }
-      .product__media-item, .thumbnail-list__item { transition: opacity 0.1s ease; }
+      .product__media-item, .thumbnail-list__item { transition: opacity 0.2s ease; }
     `;
     document.head.appendChild(style);
   }
@@ -45,90 +45,140 @@ console.log("Variant Image Automator: 100% Functional + Speed Fix");
   }
 
   let lastVariantId = null;
+  let lastUpdateTime = 0;
+  let isProcessing = false;
+
   function updateUI() {
-    const variantId = new URLSearchParams(window.location.search).get('variant') || config.currentVariant.id;
+    const now = Date.now();
+    if (isProcessing || (now - lastUpdateTime < 150)) return;
     
-    // 0. Only update if variant changed OR it's the first run
-    if (lastVariantId === variantId) return;
-    lastVariantId = variantId;
+    isProcessing = true;
+    lastUpdateTime = now;
 
-    if (observer) observer.disconnect();
+    // Apply updating class to hide gallery during switch
+    document.documentElement.classList.add('v-automator-updating');
 
-    const currentVariant = config.allVariants.find(v => v.id.toString() === variantId.toString());
-    const activeMedia = getActiveMedia(variantId);
-    const activeFiles = activeMedia.map(m => getCleanFilename(m.src));
-    const allProductFiles = config.product.media.map(m => getCleanFilename(m.src));
+    requestAnimationFrame(() => {
+      const variantId = new URLSearchParams(window.location.search).get('variant') || config.currentVariant.id;
+      lastVariantId = variantId;
 
-    let primaryGroupFiles = [];
-    if (config.isReorderMode && currentVariant) {
-      const primaryOption = currentVariant.title.split('/')[0].trim().toLowerCase();
-      const groupVariants = config.allVariants.filter(v => v.title.toLowerCase().startsWith(primaryOption));
-      
-      groupVariants.forEach(v => {
-        const vMedia = getActiveMedia(v.id);
-        vMedia.forEach(m => {
-          const fn = getCleanFilename(m.src);
-          if (fn && !primaryGroupFiles.includes(fn)) primaryGroupFiles.push(fn);
+      if (observer) observer.disconnect();
+
+      const currentVariant = config.allVariants.find(v => v.id.toString() === variantId.toString());
+      const activeMedia = getActiveMedia(variantId);
+      const activeFiles = activeMedia.map(m => getCleanFilename(m.src));
+      const allProductFiles = config.product.media.map(m => getCleanFilename(m.src));
+
+      let primaryGroupFiles = [];
+      if (config.isReorderMode && currentVariant) {
+        const primaryOption = currentVariant.title.split('/')[0].trim().toLowerCase();
+        const groupVariants = config.allVariants.filter(v => v.title.toLowerCase().startsWith(primaryOption));
+        
+        groupVariants.forEach(v => {
+          const vMedia = getActiveMedia(v.id);
+          vMedia.forEach(m => {
+            const fn = getCleanFilename(m.src);
+            if (fn && !primaryGroupFiles.includes(fn)) primaryGroupFiles.push(fn);
+          });
         });
-      });
-    }
+      }
 
-    const productArea = document.querySelector('media-gallery, .product, .product-section, #MainContent, [data-section-type="product"]') || document.body;
-    const allImgs = productArea.querySelectorAll('img');
-    const processedContainers = new Set();
+      const productArea = document.querySelector('media-gallery, .product, .product-section, #MainContent, [data-section-type="product"]') || document.body;
+      const allImgs = productArea.querySelectorAll('img');
+      const processedContainers = new Set();
+      let didChange = false;
 
-    allImgs.forEach(img => {
-      const src = img.src || img.dataset.src || img.getAttribute('data-photoswipe-src') || "";
-      const filename = getCleanFilename(src);
-      
-      if (filename && allProductFiles.includes(filename)) {
-        const container = img.closest('li, .product__media-item, .grid__item, .product-single__media-item, .product__thumb-item') || img.parentElement;
-        if (!container || processedContainers.has(container)) return;
-        processedContainers.add(container);
+      const toPrepend = [];
 
-        if (config.isReorderMode) {
-          // Reorder Mode: Show entire primary group (e.g. all Yellow Gold)
-          if (primaryGroupFiles.includes(filename)) {
-            container.classList.remove('v-hidden-item');
-            container.style.display = '';
-            // But MOVE active sub-variant (e.g. Emerald) to top
-            if (activeFiles.includes(filename)) {
-              container.parentElement.prepend(container);
+      allImgs.forEach(img => {
+        const src = img.src || img.dataset.src || img.getAttribute('data-photoswipe-src') || "";
+        const filename = getCleanFilename(src);
+        
+        if (filename && allProductFiles.includes(filename)) {
+          const container = img.closest('li, .product__media-item, .grid__item, .product-single__media-item, .product__thumb-item') || img.parentElement;
+          if (!container || processedContainers.has(container)) return;
+          processedContainers.add(container);
+
+          let shouldShow = false;
+          let shouldPrepend = false;
+
+          if (config.isReorderMode) {
+            if (primaryGroupFiles.includes(filename)) {
+              shouldShow = true;
+              if (activeFiles.includes(filename)) {
+                shouldPrepend = true;
+              }
             }
           } else {
-            container.classList.add('v-hidden-item');
-            container.style.display = 'none';
+            if (activeFiles.includes(filename)) {
+              shouldShow = true;
+            }
           }
-        } else {
-          // Normal Hide Mode: Only show active variant images
-          if (activeFiles.includes(filename)) {
-            container.classList.remove('v-hidden-item');
-            container.style.display = '';
+
+          if (shouldShow) {
+            if (container.classList.contains('v-hidden-item')) {
+              container.classList.remove('v-hidden-item');
+              container.style.display = '';
+              didChange = true;
+            }
+            if (shouldPrepend) toPrepend.push(container);
           } else {
-            container.classList.add('v-hidden-item');
-            container.style.display = 'none';
+            if (!container.classList.contains('v-hidden-item')) {
+              container.classList.add('v-hidden-item');
+              container.style.display = 'none';
+              didChange = true;
+            }
+          }
+        }
+      });
+
+      if (config.isReorderMode) {
+        for (let i = toPrepend.length - 1; i >= 0; i--) {
+          const container = toPrepend[i];
+          if (container.parentElement.firstElementChild !== container) {
+            container.parentElement.prepend(container);
+            didChange = true;
           }
         }
       }
+
+      if (didChange && config.isReorderMode) {
+        window.dispatchEvent(new Event('resize'));
+      }
+
+      if (allImgs.length > 0) {
+        document.documentElement.classList.remove('v-automator-loading');
+        document.documentElement.classList.add('v-automator-ready');
+      }
+
+      // Remove updating class immediately after processing
+      document.documentElement.classList.remove('v-automator-updating');
+
+      isProcessing = false;
+      startObserver();
     });
-
-    if (config.isReorderMode) {
-      window.dispatchEvent(new Event('resize'));
-    }
-
-    setTimeout(startObserver, 100);
   }
 
   let observer;
   function startObserver() {
     const productArea = document.querySelector('media-gallery, .product, .product-section, #MainContent, [data-section-type="product"]') || document.body;
+    if (!productArea) return;
     if (observer) observer.disconnect();
     
     observer = new MutationObserver((mutations) => {
       const variantId = new URLSearchParams(window.location.search).get('variant') || config.currentVariant.id;
-      if (variantId !== lastVariantId) {
-        updateUI();
+      let shouldUpdate = variantId !== lastVariantId;
+      
+      if (!shouldUpdate) {
+        for (let mutation of mutations) {
+          if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+            shouldUpdate = true;
+            break;
+          }
+        }
       }
+
+      if (shouldUpdate) updateUI();
     });
 
     observer.observe(productArea, {
@@ -139,5 +189,19 @@ console.log("Variant Image Automator: 100% Functional + Speed Fix");
     });
   }
 
+  // Optimized Pulse Strategy: only frequent at the very beginning
   updateUI();
+  setTimeout(updateUI, 500);
+  setTimeout(updateUI, 2000);
+  
+  setTimeout(() => {
+    document.documentElement.classList.remove('v-automator-loading');
+    document.documentElement.classList.add('v-automator-ready');
+  }, 3500);
+
+  window.addEventListener('load', updateUI);
 })();
+
+
+
+

@@ -14,32 +14,59 @@
 
 {% if apply_to_all != false and apply_to_all != 'false' %}
   {% if product %}
+    {% assign current_variant = product.selected_or_first_available_variant %}
+    {% assign featured_media_id = current_variant.featured_media.id | default: product.media.first.id %}
+
+    <style>
+      /* Initial Hide & Variant Switch Hide - Smooth Fade */
+      html:not(.v-automator-ready) .product__media-list,
+      html:not(.v-automator-ready) .thumbnail-list,
+      html:not(.v-automator-ready) media-gallery,
+      html.v-automator-updating .product__media-list,
+      html.v-automator-updating .thumbnail-list,
+      html.v-automator-updating media-gallery { 
+        opacity: 0 !important;
+        transition: opacity 0.15s ease-in-out;
+      }
+
+      /* Keep only the specific featured media item visible */
+      html:not(.v-automator-ready) .product__media-item[data-media-id*="{{ featured_media_id }}"],
+      html:not(.v-automator-ready) .product__media-list li:first-child,
+      html.v-automator-updating .product__media-item[data-media-id*="{{ featured_media_id }}"] {
+        opacity: 1 !important;
+      }
+    </style>
     <script>
-      window.VariantImageAutomator = {
-        applyToAll: true,
-        isReorderMode: {{ is_reorder_mode | json }},
-        product: {
-          id: "{{ product.id }}",
-          media: [
-            {% for media in product.media %}
-              { 
-                "id": "{{ media.id | default: forloop.index }}", 
-                "src": {{ media | image_url | json }} 
+      (function() {
+        // Apply loading class immediately
+        document.documentElement.classList.add('v-automator-loading');
+        
+        window.VariantImageAutomator = {
+          applyToAll: true,
+          isReorderMode: {{ is_reorder_mode | json }},
+          product: {
+            id: "{{ product.id }}",
+            media: [
+              {% for media in product.media %}
+                { 
+                  "id": "{{ media.id | default: forloop.index }}", 
+                  "src": {{ media | image_url | json }} 
+                }{% unless forloop.last %},{% endunless %}
+              {% endfor %}
+            ]
+          },
+          currentVariant: { id: "{{ product.selected_or_first_available_variant.id }}" },
+          allVariants: [
+            {% for variant in product.variants %}
+              {
+                "id": "{{ variant.id }}",
+                "title": {{ variant.title | json }},
+                "featured_image_id": "{{ variant.featured_media.id | default: variant.image.id }}"
               }{% unless forloop.last %},{% endunless %}
             {% endfor %}
           ]
-        },
-        currentVariant: { id: "{{ product.selected_or_first_available_variant.id }}" },
-        allVariants: [
-          {% for variant in product.variants %}
-            {
-              "id": "{{ variant.id }}",
-              "title": {{ variant.title | json }},
-              "featured_image_id": "{{ variant.featured_media.id | default: variant.image.id }}"
-            }{% unless forloop.last %},{% endunless %}
-          {% endfor %}
-        ]
-      };
+        };
+      })();
     </script>
     <script src="{{ 'app.js' | asset_url }}" defer></script>
   {% endif %}

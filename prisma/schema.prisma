@@ -40,4 +40,5 @@ model AppSettings {
   preserveFeatured   Boolean @default(false)
   applyToAll         Boolean @default(true)
   reorderCollections String  @default("[]")
+  activeCollections  String  @default("[]")
 }

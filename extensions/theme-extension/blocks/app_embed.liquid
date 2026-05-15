@@ -1,7 +1,6 @@
-{% assign apply_to_all = shop.metafields.variant_image_automator.apply_to_all.value %}
 {% assign reorder_meta = shop.metafields.variant_image_automator.reorder_collections.value %}
-{% assign is_reorder_mode = false %}
 
+{% assign is_reorder_mode = false %}
 {% if reorder_meta and reorder_meta != "[]" and reorder_meta != blank %}
   {% for collection in product.collections %}
     {% assign gid = "gid://shopify/Collection/" | append: collection.id %}
@@ -12,7 +11,7 @@
   {% endfor %}
 {% endif %}
 
-{% if apply_to_all != false and apply_to_all != 'false' %}
+{% if is_reorder_mode %}
   {% if product %}
     {% assign current_variant = product.selected_or_first_available_variant %}
     {% assign featured_media_id = current_variant.featured_media.id | default: product.media.first.id %}

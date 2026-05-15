@@ -16,6 +16,7 @@ export const action = async ({ request }) => {
     preserveFeatured: data.preserveFeatured === "true",
     applyToAll: data.applyToAll === "true",
     reorderCollections: data.reorderCollections || "[]",
+    activeCollections: data.activeCollections || "[]",
   };
 
   await updateSettings(session.shop, settings);
@@ -48,6 +49,13 @@ export const action = async ({ request }) => {
               key: "reorder_collections",
               type: "json",
               value: settings.reorderCollections,
+              ownerId: shopId
+            },
+            {
+              namespace: "variant_image_automator",
+              key: "active_collections",
+              type: "json",
+              value: settings.activeCollections,
               ownerId: shopId
             }
           ]
@@ -180,6 +188,7 @@ export default function Index() {
   };
 
   const selectedCollections = JSON.parse(settings.reorderCollections || "[]");
+  const activeCollections = JSON.parse(settings.activeCollections || "[]");
 
   const handleSelection = (resources) => {
     const newIds = resources.selection.map((res) => res.id);
@@ -244,32 +253,12 @@ export default function Index() {
           </s-stack>
         </s-stack>
       </s-section>
-
-
       <s-section>
-        <s-heading>How it works</s-heading>
-        <div style={{ marginTop: "12px" }}>
-          <s-paragraph style={{ color: "#202223", fontWeight: "500" }}>
-            Follow these steps to set up your variant images:
-          </s-paragraph>
-          <ul style={{ 
-            marginTop: "8px", 
-            paddingLeft: "20px", 
-            color: "#6d7175", 
-            fontSize: "14px",
-            lineHeight: "1.6"
-          }}>
-            <li><strong>Arrange Media:</strong> Place all images of a variant together in your Shopify Product Media section.</li>
-            <li><strong>Assign First Image:</strong> Assign the first image of each group to its corresponding variant as the primary image.</li>
-            <li><strong>Automatic Display:</strong> The app will automatically show the entire group of images when that variant is selected.</li>
-          </ul>
-        </div>
-      </s-section>
-
-      <s-section>
-        <s-heading>Reorder Mode Collections</s-heading>
+        <s-heading>App Mode: Smart Reorder</s-heading>
         <s-paragraph style={{ color: "#6d7175", fontSize: "13px", marginTop: "4px" }}>
-          In these collections, all images of the same color will be shown, but the selected variant's images will be moved to the top.
+          Select collections where you want the app to work. 
+          For these collections, the selected variant's images will move to the <strong>Top</strong> of the gallery.
+          All other products will use <strong>Default Shopify behavior</strong>.
         </s-paragraph>
         
         <div style={{ marginTop: "16px" }}>
@@ -297,9 +286,31 @@ export default function Index() {
                   padding: "4px 10px", 
                   borderRadius: "4px", 
                   fontSize: "12px",
-                  color: "#333"
+                  color: "#333",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px"
                 }}>
                   {id.split("/").pop()}
+                  <button
+                    onClick={() => {
+                      const newCollections = selectedCollections.filter(item => item !== id);
+                      handleSettingChange("reorderCollections", JSON.stringify(newCollections));
+                    }}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      padding: "0 2px",
+                      color: "#8c9196",
+                      fontSize: "14px",
+                      lineHeight: "1",
+                      display: "flex",
+                      alignItems: "center"
+                    }}
+                  >
+                    ×
+                  </button>
                 </span>
               ))}
             </div>

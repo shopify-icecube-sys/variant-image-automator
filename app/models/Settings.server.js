@@ -13,6 +13,7 @@ export async function getSettings(shop) {
       preserveFeatured: false,
       applyToAll: true,
       reorderCollections: "[]",
+      activeCollections: "[]",
     };
   }
 
